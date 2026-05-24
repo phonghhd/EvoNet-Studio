@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🚀 EvoNet-Studio Pro V3</h1>
+  <h1>🚀 EvoNet-Studio Pro</h1>
   <p><b>The Ultimate Open-Source AI Fine-Tuning & LLMOps Lifecycle Platform</b></p>
 
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue" alt="Python Version">
