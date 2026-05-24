@@ -69,6 +69,27 @@ python3 app.py
 
 ---
 
+## 🐳 Docker Deployment (Enterprise / Cloud)
+
+For enterprise users looking to deploy EvoNet-Studio on cloud instances (AWS EC2, GCP, Azure) or local servers, we provide a production-ready Docker setup.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/phonghhd/EvoNet-Studio.git
+cd EvoNet-Studio
+
+# 2. Deploy with Docker Compose (requires NVIDIA Container Toolkit)
+docker-compose up -d --build
+```
+
+**What this does:**
+- Automatically builds an isolated container using `pytorch:2.2.1-cuda12.1` as the base image.
+- Passes GPU passthrough to the container (`capabilities: [gpu]`).
+- Exposes port `7860` for the Studio UI and port `8000` for the API Deployment server.
+- Mounts local `/outputs` and `/dataset` directories to prevent data loss when the container restarts.
+
+---
+
 ## 🖥️ Hybrid Architecture (CPU / GPU)
 
 EvoNet-Studio intelligently detects your hardware capabilities:

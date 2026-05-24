@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  evonet-studio:
+    build: .
+    container_name: evonet-studio
+    ports:
+      - "7860:7860" # Gradio UI
+      - "8000:8000" # API Deployment Server
+    volumes:
+      - ./outputs:/app/outputs
+      - ./dataset:/app/dataset
+    # Hardware acceleration mapping
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
