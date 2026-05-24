@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+
+# Model Outputs and Checkpoints
+outputs/
+models/
+*.gguf
+*.bin
+*.pt
+*.safetensors
+*.safetensors.index.json
+adapter_config.json
+adapter_model.safetensors
+training_args.bin
+
+# Datasets
+*.jsonl
+*.csv
+dataset/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# EvoNet specifics
+tmp_pip/
+logs/
+nohup.out

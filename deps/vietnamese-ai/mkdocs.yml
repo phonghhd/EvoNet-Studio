@@ -1,0 +1,108 @@
+site_name: Vietnamese AI Framework
+site_description: Framework AI thuần tiếng Việt cho Python - Học máy đơn giản, API tiếng Việt, Production-ready
+site_url: https://phonghhd.github.io/vietnamese-ai
+repo_url: https://github.com/phonghhd/vietnamese-ai
+repo_name: phonghhd/vietnamese-ai
+
+theme:
+  name: material
+  language: vi
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Chế độ tối
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Chế độ sáng
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Trang chủ: index.md
+  - Bắt đầu:
+    - Cài đặt: getting-started/installation.md
+    - Sử dụng nhanh: getting-started/quickstart.md
+  - Hướng dẫn:
+    - Phân loại: guides/classification.md
+    - Hồi quy: guides/regression.md
+    - Xử lý văn bản: guides/text-processing.md
+    - AutoML: guides/automl.md
+    - Pipeline: guides/pipeline.md
+    - Mobile/Edge: guides/mobile.md
+    - Federated Learning: guides/federated.md
+    - Real-time Pipeline: guides/realtime.md
+    - Cloud SaaS: guides/saas.md
+    - No-code Studio: guides/studio.md
+    - Vietnamese LLM: guides/llm.md
+    - PEFT & Instruction Tuning: guides/peft.md
+    - SFT, DPO & RLHF: guides/sft-dpo-rlhf.md
+    - GPT Pre-training: guides/gpt-pretraining.md
+    - Evaluation & Benchmarks: guides/evaluation.md
+    - RAG Pipeline: guides/rag.md
+    - Serving & Streaming: guides/serving.md
+    - Prompt Engineering: guides/prompts.md
+    - NLP Extensions: guides/nlp-extensions.md
+    - Model Compression: guides/compression.md
+    - Production Hardening: guides/production.md
+    - Self-Adapting LMs (SALM): guides/salm.md
+    - Google Colab / Kaggle: guides/google-colab-kaggle.md
+  - API Reference:
+    - Models: api/models.md
+    - Preprocessing: api/preprocessing.md
+    - Core: api/core.md
+    - Utils: api/utils.md
+    - Mobile/Edge: api/mobile.md
+    - Federated: api/federated.md
+    - Real-time: api/realtime.md
+    - Cloud SaaS: api/saas.md
+    - Studio: api/studio.md
+    - LLM: api/llm.md
+    - NAS: api/nas.md
+    - PEFT: api/peft.md
+    - Training (SFT/DPO/RLHF): api/training.md
+    - GPT & PreTrainer: api/gpt.md
+    - Evaluation: api/evaluation.md
+    - RAG: api/rag.md
+    - Serving: api/serving.md
+    - Prompts: api/prompts.md
+    - NLP Extensions: api/nlp-extensions.md
+    - Compression: api/compression.md
+    - Production: api/production.md
+    - SALM: api/salm.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
