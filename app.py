@@ -19,6 +19,7 @@ from evonet_studio.ui.monitor import build_monitor_ui
 from evonet_studio.ui.synthesis import build_synthesis_ui
 from evonet_studio.ui.rag import build_rag_ui
 from evonet_studio.ui.deployment import build_deployment_ui
+from evonet_studio.ui.arena import build_arena_ui
 
 def create_app():
     # Initialize Engine
@@ -134,6 +135,7 @@ def create_app():
             build_alignment_ui(engine)
             build_agent_tuning_ui(engine)
             build_dataset_ui(engine)
+            build_arena_ui(engine)
             build_evaluation_ui(engine)
             build_rag_ui(engine)
             build_chat_ui(engine)

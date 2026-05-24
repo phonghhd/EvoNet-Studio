@@ -9,12 +9,15 @@ def build_alignment_ui(engine: StudioEngine):
         with gr.Row():
             with gr.Column(scale=5):
                 gr.Markdown("#### 1. Model & Data")
-                model_name = gr.Dropdown(
-                    choices=engine.get_models(),
-                    value=engine.get_models()[0] if engine.get_models() else "",
-                    label="Policy Model",
-                    allow_custom_value=True
-                )
+                with gr.Row():
+                    model_name = gr.Dropdown(
+                        choices=engine.get_models(),
+                        value=engine.get_models()[0] if engine.get_models() else "",
+                        label="Policy Model",
+                        allow_custom_value=True,
+                        scale=4
+                    )
+                    refresh_hub_btn = gr.Button("🔄 Fetch Latest Models (HF Hub)", scale=1)
                 
                 algorithm = gr.Dropdown(
                     choices=["DPO (Direct Preference Optimization)", "ORPO (Odds Ratio Preference Optimization)", "KTO (Kahneman-Tversky Optimization)"],
@@ -75,3 +78,9 @@ def build_alignment_ui(engine: StudioEngine):
             outputs=[log_output]
         )
         refresh_btn.click(fn=update_logs, outputs=[log_output])
+        
+        def fetch_models():
+            new_list = engine.fetch_trending_models()
+            return gr.Dropdown(choices=new_list, value=new_list[0] if new_list else "")
+            
+        refresh_hub_btn.click(fn=fetch_models, outputs=[model_name])

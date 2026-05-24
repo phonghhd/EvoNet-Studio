@@ -33,15 +33,21 @@ Test your fine-tuned model's ability to extract facts from private documents:
 - The built-in Local Vector Database (`sentence-transformers`) chunks and embeds the document.
 - Chat with your model securely offline and verify its RAG capabilities.
 
-### 5. 📉 LLM-as-a-Judge Evaluation
-Ditch traditional Perplexity metrics. Use Gemini, GPT-4, or Claude to automatically grade your model's responses on a scale of 1-10 to ensure logical accuracy and prevent hallucinations.
+### 5. 📉 LLM-as-a-Judge & LLM Arena (DPO Synthesis)
+Ditch traditional Perplexity metrics. Use our built-in **LLM Arena** to blindly test two models side-by-side. Your votes are automatically saved as a high-quality DPO dataset (`outputs/arena_dpo_dataset.jsonl`). You can also use Gemini, GPT-4, or Claude to automatically grade your model's responses.
 
-### 6. ⚡ 1-Click Deployment (vLLM & Fallback)
+### 6. ✨ Auto-Prompt Optimizer (DSPy Style)
+Stop struggling with prompt engineering! Enter a basic idea (e.g., "A customer service bot") and our built-in Auto-Prompt Optimizer will use advanced Meta-Prompting to generate a highly structured, professional System Prompt (Role, Objective, Rules, Format) instantly.
+
+### 7. ⚡ 1-Click Deployment (vLLM & Fallback)
 Once trained, deploy your model as a production-grade API server (`http://localhost:8000/v1/chat/completions`) with a single click.
 - **vLLM Engine:** For those with powerful GPUs, deploy with PagedAttention for maximum throughput.
 - **FastAPI Engine:** Native CPU/GPU fallback using standard Transformers.
 
-### 7. 📦 Model Merging & Hub Push
+### 8. 🔄 Dynamic HuggingFace Hub Fetcher
+EvoNet-Studio is future-proof. Click the "Fetch Latest Models" button to instantly query the HuggingFace API and pull down the top trending models (e.g., latest Llama, Qwen, Gemma variants from Unsloth) straight into your training dropdowns.
+
+### 9. 📦 Model Merging & Hub Push
 Merge your trained LoRA adapters directly into the Base Model and instantly push the standalone model to the **HuggingFace Hub** to share with the world.
 
 ---

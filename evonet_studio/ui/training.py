@@ -9,12 +9,15 @@ def build_training_ui(engine: StudioEngine):
         with gr.Row():
             with gr.Column(scale=5):
                 gr.Markdown("#### 1. Model & Data")
-                model_name = gr.Dropdown(
-                    choices=engine.get_models(),
-                    value=engine.get_models()[0] if engine.get_models() else "",
-                    label="Base Model",
-                    allow_custom_value=True
-                )
+                with gr.Row():
+                    model_name = gr.Dropdown(
+                        choices=engine.get_models(),
+                        value=engine.get_models()[0] if engine.get_models() else "",
+                        label="Base Model",
+                        allow_custom_value=True,
+                        scale=4
+                    )
+                    refresh_hub_btn = gr.Button("🔄 Fetch Latest Models (HF Hub)", scale=1)
                 
                 dataset_path = gr.Textbox(
                     label="Dataset Path or HuggingFace ID",
@@ -22,7 +25,9 @@ def build_training_ui(engine: StudioEngine):
                     value="yahma/alpaca-cleaned"
                 )
                 
-                is_vision = gr.Checkbox(label="Is Vision-Language Model (VLM)?", value=False)
+                with gr.Row():
+                    is_vision = gr.Checkbox(label="Is Vision-Language Model (VLM)?", value=False)
+                    is_bitnet = gr.Checkbox(label="🔥 Enable 1.58-bit Compression (BitNet)", value=False)
                 
                 gr.Markdown("#### 2. Basic Hyperparameters")
                 with gr.Row():
@@ -58,8 +63,8 @@ def build_training_ui(engine: StudioEngine):
                 refresh_btn = gr.Button("🔄 Refresh Logs")
 
         # Callbacks
-        def start_train(m, d, is_vlm, e, b, lr, r, a, w, max_len, out):
-            msg = engine.start_training(m, d, int(e), int(b), lr, int(r), int(a), int(w), int(max_len), out, is_vision=is_vlm)
+        def start_train(m, d, is_vlm, is_bitnet_val, e, b, lr, r, a, w, max_len, out):
+            msg = engine.start_training(m, d, int(e), int(b), lr, int(r), int(a), int(w), int(max_len), out, is_vision=is_vlm, is_bitnet=is_bitnet_val)
             return msg + "\n\n" + engine.get_logs()
             
         def update_logs():
@@ -67,7 +72,7 @@ def build_training_ui(engine: StudioEngine):
 
         train_btn.click(
             fn=start_train,
-            inputs=[model_name, dataset_path, is_vision, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir],
+            inputs=[model_name, dataset_path, is_vision, is_bitnet, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir],
             outputs=[log_output]
         )
         
@@ -75,3 +80,9 @@ def build_training_ui(engine: StudioEngine):
             fn=update_logs,
             outputs=[log_output]
         )
+        
+        def fetch_models():
+            new_list = engine.fetch_trending_models()
+            return gr.Dropdown(choices=new_list, value=new_list[0] if new_list else "")
+            
+        refresh_hub_btn.click(fn=fetch_models, outputs=[model_name])

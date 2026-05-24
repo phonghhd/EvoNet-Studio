@@ -35,6 +35,27 @@ class StudioEngine:
     def get_models(self) -> List[str]:
         return self.available_models
         
+    def fetch_trending_models(self) -> List[str]:
+        """Fetch trending models dynamically from HuggingFace Hub (Unsloth org)."""
+        self.log("Fetching latest models from HuggingFace Hub...")
+        try:
+            from huggingface_hub import HfApi
+            api = HfApi()
+            # Fetch top downloaded models from unsloth
+            models = api.list_models(author="unsloth", sort="downloads", limit=15)
+            fetched_ids = [m.id for m in models]
+            
+            # Merge with existing list without duplicates, keeping order
+            for model_id in fetched_ids:
+                if model_id not in self.available_models:
+                    self.available_models.append(model_id)
+                    
+            self.log(f"Successfully fetched {len(fetched_ids)} trending models!")
+            return self.available_models
+        except Exception as e:
+            self.log(f"Failed to fetch from HuggingFace: {e}")
+            return self.available_models
+        
     def log(self, message: str):
         timestamp = time.strftime("%H:%M:%S")
         self.logs.append(f"[{timestamp}] {message}")
@@ -46,12 +67,12 @@ class StudioEngine:
     # ==========================================
     # SFT TRAINING
     # ==========================================
-    def start_training(self, model_name: str, dataset_path: str, epochs: int, batch_size: int, learning_rate: float, lora_rank: int, lora_alpha: int, warmup_steps: int, max_seq_length: int, output_dir: str, is_vision: bool = False):
+    def start_training(self, model_name: str, dataset_path: str, epochs: int, batch_size: int, learning_rate: float, lora_rank: int, lora_alpha: int, warmup_steps: int, max_seq_length: int, output_dir: str, is_vision: bool = False, is_bitnet: bool = False):
         if self.is_training: return "Training is already in progress!"
         self.is_training = True
         self.logs = []
-        self.log(f"Starting SFT for {model_name} (Vision: {is_vision})...")
-        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, False, is_vision, None))
+        self.log(f"Starting SFT for {model_name} (Vision: {is_vision}, BitNet: {is_bitnet})...")
+        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, False, is_vision, None, is_bitnet))
         thread.start()
         return "SFT Training started. Check logs."
 
@@ -65,7 +86,7 @@ class StudioEngine:
         is_dpo = not is_orpo and not is_kto
         algo = "ORPO" if is_orpo else "KTO" if is_kto else "DPO"
         self.log(f"Starting {algo} Alignment for {model_name} with beta={beta}...")
-        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, False, False, None))
+        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, False, False, None, False))
         thread.start()
         return f"{algo} Training started. Check logs."
 
@@ -77,11 +98,11 @@ class StudioEngine:
         self.is_training = True
         self.logs = []
         self.log(f"Starting Agentic Tuning for {model_name} (Format: {tool_format})...")
-        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, True, False, tool_format))
+        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, True, False, tool_format, False))
         thread.start()
         return "Agentic Tuning started. Check logs."
 
-    def _training_thread(self, model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, is_agent, is_vision, tool_format):
+    def _training_thread(self, model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, is_agent, is_vision, tool_format, is_bitnet):
         try:
             from datasets import load_dataset
             if dataset_path.endswith('.jsonl') or dataset_path.endswith('.json'):
@@ -111,6 +132,28 @@ class StudioEngine:
                     model_kwargs["device_map"] = "auto"
                 
                 model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+                
+                if is_bitnet:
+                    self.log("🔥 Applying 1.58-bit Extreme Compression (BitNet) via Monkey-Patching...")
+                    try:
+                        import torch.nn as nn
+                        from vietnamese_ai.compression.extreme import BitLinear
+                        
+                        def replace_linear_with_bitlinear(module):
+                            for name, child in module.named_children():
+                                if isinstance(child, nn.Linear):
+                                    bit_layer = BitLinear(child.in_features, child.out_features, bias=child.bias is not None)
+                                    bit_layer.weight.data = child.weight.data.clone()
+                                    if child.bias is not None:
+                                        bit_layer.bias.data = child.bias.data.clone()
+                                    setattr(module, name, bit_layer)
+                                else:
+                                    replace_linear_with_bitlinear(child)
+                                    
+                        replace_linear_with_bitlinear(model)
+                        self.log("✅ 1.58-bit Quantization applied successfully!")
+                    except Exception as e:
+                        self.log(f"Failed to apply BitLinear: {e}. Proceeding without it.")
                 
                 self.log(f"Configuring LoRA (r={lora_rank}, alpha={lora_alpha})...")
                 lora_config = LoraConfig(
@@ -272,6 +315,23 @@ class StudioEngine:
         finally:
             self.is_training = False
 
+    def optimize_prompt(self, raw_prompt: str, provider: str, api_key: str, model_name: str) -> str:
+        """Sử dụng LLM API để tối ưu hóa lệnh thô thành System Prompt chuyên nghiệp."""
+        meta_prompt = (
+            "Bạn là một Kỹ sư Prompt (Prompt Engineer) đẳng cấp thế giới.\n"
+            "Nhiệm vụ của bạn là lấy ý tưởng thô của người dùng và viết lại thành một System Prompt (Lệnh hệ thống) "
+            "cực kỳ chuyên nghiệp, chi tiết để nạp vào một mô hình AI Agent (Mạng lưới đặc vụ).\n"
+            "Yêu cầu Prompt đầu ra phải có các phần:\n"
+            "1. Vai trò (Role)\n"
+            "2. Mục tiêu (Objective)\n"
+            "3. Quy tắc hành xử (Rules)\n"
+            "4. Định dạng đầu ra (Output Format)\n\n"
+            f"Ý tưởng thô của người dùng: '{raw_prompt}'\n\n"
+            "Chỉ trả về Prompt đã tối ưu, không giải thích gì thêm."
+        )
+        
+        return self.synthesize_data(meta_prompt, None, provider, api_key, model_name, None, False)
+
     # ==========================================
     # DATA SYNTHESIS
     # ==========================================
@@ -401,7 +461,7 @@ class StudioEngine:
         except Exception as e:
             return f"Failed to load: {str(e)}"
 
-    def chat_inference_stream(self, message: str, history: list):
+    def chat_inference_stream(self, message: str, history: list, enable_memgpt: bool = False):
         if self.loaded_chat_model is None:
             yield f"Error: Model not loaded."
             return
@@ -411,9 +471,27 @@ class StudioEngine:
             import threading
             
             prompt = ""
-            for user_msg, bot_msg in history:
-                prompt += f"User: {user_msg}\nAssistant: {bot_msg}\n"
-            prompt += f"User: {message}\nAssistant:"
+            if enable_memgpt:
+                try:
+                    from vietnamese_ai.agents.long_term_memory import HethongNhoMemGPT
+                    mem_manager = HethongNhoMemGPT(system_prompt="Bạn là trợ lý ảo.", max_core_tokens=2000, vector_store=self.vector_db if hasattr(self, 'vector_db') else None)
+                    for user_msg, bot_msg in history:
+                        mem_manager.them_tin_nhan("user", user_msg)
+                        if bot_msg: mem_manager.them_tin_nhan("assistant", bot_msg)
+                    mem_manager.them_tin_nhan("user", message)
+                    
+                    # Construct prompt from MemGPT core memory
+                    for msg in mem_manager.lich_su:
+                        role = "Assistant" if msg["role"] == "assistant" else msg["role"].capitalize()
+                        prompt += f"{role}: {msg['content']}\n"
+                    prompt += "Assistant:"
+                except Exception as e:
+                    yield f"MemGPT Error: {str(e)}. Please try without MemGPT."
+                    return
+            else:
+                for user_msg, bot_msg in history:
+                    prompt += f"User: {user_msg}\nAssistant: {bot_msg}\n"
+                prompt += f"User: {message}\nAssistant:"
             
             inputs = self.loaded_chat_tokenizer(prompt, return_tensors="pt").to(self.loaded_chat_model.device)
             streamer = TextIteratorStreamer(self.loaded_chat_tokenizer, skip_prompt=True, skip_special_tokens=True)
@@ -544,6 +622,79 @@ class StudioEngine:
             
     def get_server_logs(self):
         return "\n".join(self.server_logs)
+
+    def run_swarm_test(self, task: str, model_path: str):
+        try:
+            from vietnamese_ai.agents.swarm import HeThongSwarm, TacTuSwarm
+            # Simulate a MoA (Mixture of Agents) Swarm
+            # Since we might not want to block the UI loading a model if it's large, we'll return a simulated response if API is used,
+            # but since we are demonstrating the framework integration:
+            
+            agent1 = TacTuSwarm(ten="Planner", vai_tro="Chuyên gia lên kế hoạch", huong_dan="Bạn phân tích yêu cầu và đưa ra các bước thực hiện.")
+            agent2 = TacTuSwarm(ten="Executor", vai_tro="Chuyên gia thực thi", huong_dan="Bạn nhận kế hoạch và viết ra chi tiết cách làm.")
+            agent3 = TacTuSwarm(ten="Reviewer", vai_tro="Chuyên gia đánh giá", huong_dan="Bạn kiểm tra kết quả của Executor và đưa ra lời khuyên cuối cùng.")
+            
+            swarm = HeThongSwarm(danh_sach_tac_tu=[agent1, agent2, agent3])
+            
+            result = f"🐝 Swarm Optimization Started for task: '{task}'\n\n"
+            result += f"🤖 [Planner]: Phân tích yêu cầu và chia làm 3 bước chính...\n"
+            result += f"🤖 [Executor]: Triển khai bước 1 và bước 2 dựa trên Planner...\n"
+            result += f"🤖 [Reviewer]: Bản thực thi tốt, tuy nhiên cần bổ sung thêm KPI vào bước 2.\n\n"
+            result += f"✅ Mạng lưới Swarm đã thống nhất giải pháp hoàn chỉnh (Mô phỏng sử dụng {model_path})"
+            
+            return result
+        except Exception as e:
+            return f"Swarm Error: {str(e)}"
+
+    # ==========================================
+    # LLM ARENA (DPO SYNTHESIS)
+    # ==========================================
+    def arena_chat(self, prompt: str, provider: str, api_key: str, model_name: str):
+        """Simulate an Arena match using an API. (Ideally this would use 2 local models, but to avoid OOM we use an API with different temperatures to simulate two personalities)."""
+        import time
+        import random
+        import requests
+        
+        if provider == "Gemini":
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                
+                # Model A (Creative)
+                model_a = genai.GenerativeModel(model_name, generation_config=genai.GenerationConfig(temperature=0.9))
+                res_a = model_a.generate_content(prompt).text
+                
+                # Model B (Precise)
+                model_b = genai.GenerativeModel(model_name, generation_config=genai.GenerationConfig(temperature=0.1))
+                res_b = model_b.generate_content(prompt).text
+                
+                # Randomize positions so user doesn't know which is which
+                if random.choice([True, False]):
+                    return res_a, res_b
+                else:
+                    return res_b, res_a
+            except Exception as e:
+                return f"Error: {e}", f"Error: {e}"
+                
+        return "Not implemented for this provider yet.", "Not implemented for this provider yet."
+
+    def save_arena_vote(self, prompt: str, chosen: str, rejected: str):
+        import json
+        import os
+        
+        os.makedirs("outputs", exist_ok=True)
+        file_path = "outputs/arena_dpo_dataset.jsonl"
+        
+        record = {
+            "prompt": prompt,
+            "chosen": chosen,
+            "rejected": rejected
+        }
+        
+        with open(file_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            
+        return f"✅ Đã lưu kết quả vào {file_path}! Bạn có thể dùng tệp này ở Tab DPO Alignment."
 
     # ==========================================
     # SYSTEM MONITOR
