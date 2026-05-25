@@ -14,6 +14,8 @@ EvoNet-Studio Pro is a cutting-edge, web-based (Gradio) interface designed to ma
 
 ## ✨ Super Features
 
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20375290-blue?style=flat-square)](https://doi.org/10.5281/zenodo.20375290)
+
 ### 1. ⚖️ Alignment Tuning (RLHF)
 Move beyond basic SFT. EvoNet-Studio supports the holy trinity of AI alignment:
 - **DPO** (Direct Preference Optimization)
