@@ -127,5 +127,21 @@ EvoNet-Studio intelligently detects your hardware capabilities:
 Contributions are welcome! If you'd like to add support for new Alignment algorithms, better UI elements, or new Deployment engines, feel free to submit a Pull Request.
 
 ## 📜 License
-
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 💖 Support & Donate (Ủng hộ dự án)
+
+Nếu bạn thấy **EvoNet-Studio Pro** hữu ích cho công việc, học tập hoặc doanh nghiệp của bạn, hãy cân nhắc ủng hộ (donate) để tiếp thêm động lực cho chúng tôi duy trì và phát triển thêm nhiều siêu tính năng mới trong tương lai!
+
+Mọi sự đóng góp dù nhỏ nhất đều là nguồn động viên vô giá đối với những người làm mã nguồn mở.
+
+- **Ngân hàng:** MB BANK
+- **Số tài khoản:** 0948622661
+- **Tên người thụ hưởng:** HUYNH DUONG PHONG
+- **Nội dung:** Donate EvoNet Studio
+
+<img src="QR.jpg" alt="QR Code Donate" width="200"/>
+
+Cảm ơn bạn rất nhiều vì đã đồng hành cùng sự phát triển của Trí tuệ Nhân tạo Việt Nam! 🇻🇳
