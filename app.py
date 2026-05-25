@@ -20,6 +20,10 @@ from evonet_studio.ui.synthesis import build_synthesis_ui
 from evonet_studio.ui.rag import build_rag_ui
 from evonet_studio.ui.deployment import build_deployment_ui
 from evonet_studio.ui.arena import build_arena_ui
+from evonet_studio.ui.dataset_cleaner import build_dataset_cleaner_ui
+from evonet_studio.ui.benchmark import build_benchmark_ui
+from evonet_studio.ui.telemetry import build_telemetry_ui
+from evonet_studio.ui.cloud_sync import build_cloud_sync_ui
 
 def create_app():
     # Initialize Engine
@@ -134,11 +138,15 @@ def create_app():
             build_training_ui(engine)
             build_alignment_ui(engine)
             build_agent_tuning_ui(engine)
+            build_dataset_cleaner_ui(engine)
             build_dataset_ui(engine)
             build_arena_ui(engine)
+            build_telemetry_ui(engine)
             build_evaluation_ui(engine)
+            build_benchmark_ui(engine)
             build_rag_ui(engine)
             build_chat_ui(engine)
+            build_cloud_sync_ui(engine)
             build_export_ui(engine)
             build_deployment_ui(engine)
             build_monitor_ui(engine)

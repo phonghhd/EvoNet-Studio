@@ -19,9 +19,15 @@ def build_training_ui(engine: StudioEngine):
                     )
                     refresh_hub_btn = gr.Button("🔄 Fetch Latest Models (HF Hub)", scale=1)
                 
+                gr.Markdown("#### 2. Training Mode & Dataset")
+                training_mode = gr.Radio(
+                    choices=["Supervised Fine-Tuning (SFT / Q&A)", "Continued Pre-Training (CPT / Raw Text)"],
+                    value="Supervised Fine-Tuning (SFT / Q&A)",
+                    label="Select Training Mode"
+                )
                 dataset_path = gr.Textbox(
                     label="Dataset Path or HuggingFace ID",
-                    placeholder="e.g., yahma/alpaca-cleaned",
+                    placeholder="e.g., yahma/alpaca-cleaned (SFT) or outputs/raw_corpus.txt (CPT)",
                     value="yahma/alpaca-cleaned"
                 )
                 
@@ -29,7 +35,7 @@ def build_training_ui(engine: StudioEngine):
                     is_vision = gr.Checkbox(label="Is Vision-Language Model (VLM)?", value=False)
                     is_bitnet = gr.Checkbox(label="🔥 Enable 1.58-bit Compression (BitNet)", value=False)
                 
-                gr.Markdown("#### 2. Basic Hyperparameters")
+                gr.Markdown("#### 3. Basic Hyperparameters")
                 with gr.Row():
                     epochs = gr.Number(value=3, label="Epochs", minimum=1)
                     batch_size = gr.Number(value=2, label="Batch Size", minimum=1)
@@ -63,8 +69,9 @@ def build_training_ui(engine: StudioEngine):
                 refresh_btn = gr.Button("🔄 Refresh Logs")
 
         # Callbacks
-        def start_train(m, d, is_vlm, is_bitnet_val, e, b, lr, r, a, w, max_len, out):
-            msg = engine.start_training(m, d, int(e), int(b), lr, int(r), int(a), int(w), int(max_len), out, is_vision=is_vlm, is_bitnet=is_bitnet_val)
+        def start_train(m, mode, d, is_vlm, is_bitnet_val, e, b, lr, r, a, w, max_len, out):
+            is_cpt = "CPT" in mode
+            msg = engine.start_training(m, d, int(e), int(b), lr, int(r), int(a), int(w), int(max_len), out, is_vision=is_vlm, is_bitnet=is_bitnet_val, is_cpt=is_cpt)
             return msg + "\n\n" + engine.get_logs()
             
         def update_logs():
@@ -72,7 +79,7 @@ def build_training_ui(engine: StudioEngine):
 
         train_btn.click(
             fn=start_train,
-            inputs=[model_name, dataset_path, is_vision, is_bitnet, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir],
+            inputs=[model_name, training_mode, dataset_path, is_vision, is_bitnet, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir],
             outputs=[log_output]
         )
         

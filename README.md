@@ -41,16 +41,34 @@ Ditch traditional Perplexity metrics. Use our built-in **LLM Arena** to blindly 
 ### 6. ✨ Auto-Prompt Optimizer (DSPy Style)
 Stop struggling with prompt engineering! Enter a basic idea (e.g., "A customer service bot") and our built-in Auto-Prompt Optimizer will use advanced Meta-Prompting to generate a highly structured, professional System Prompt (Role, Objective, Rules, Format) instantly.
 
-### 7. ⚡ 1-Click Deployment (vLLM & Fallback)
+### 7. 🧹 Data Cleaning & Preprocessing Studio
+Garbage in, garbage out! Use the built-in Data Cleaner to instantly analyze your raw `.jsonl` datasets. It automatically detects and removes duplicate records, identifies missing keys, strips out overly short responses, and estimates total tokens to ensure your dataset is perfectly healthy before wasting VRAM on training.
+
+### 8. 📊 Automated Academic Benchmark Suite
+Stop guessing if your model is smart! We integrated `lm-eval` (HuggingFace Evaluation Harness) directly into EvoNet-Studio. Select your fine-tuned model, choose tests like **MMLU, GSM8k, or HellaSwag**, and run a rigorous academic benchmark locally to get objective scores.
+
+### 9. 🔄 Data Flywheel (Closed-Loop Telemetry)
+The Holy Grail of AI: A closed feedback loop! When deploying the model via our Native API, all chats are logged. External apps can send Thumbs Up/Down feedback to the `/v1/feedback` endpoint. Inside the **Telemetry Studio**, you can view bad responses, correct them manually, and instantly push them to your DPO Dataset to make your next model version smarter!
+
+### 10. ⚡ 1-Click Deployment (vLLM & Fallback)
 Once trained, deploy your model as a production-grade API server (`http://localhost:8000/v1/chat/completions`) with a single click.
 - **vLLM Engine:** For those with powerful GPUs, deploy with PagedAttention for maximum throughput.
-- **FastAPI Engine:** Native CPU/GPU fallback using standard Transformers.
+- **FastAPI Engine:** Native CPU/GPU fallback using standard Transformers (supports Production Telemetry).
 
-### 8. 🔄 Dynamic HuggingFace Hub Fetcher
+### 11. 🧩 Multi-LoRA MoE Router (LoRAX)
+Never suffer from Catastrophic Forgetting again! Instead of overwriting your base model, train isolated LoRA experts (e.g., Code, Math, Law). In the API Deployment tab, load your Base Model and pass a JSON dictionary of your LoRA adapters. The Native Server acts as a **Mixture-of-Experts (MoE) Router**, dynamically analyzing incoming prompts and hot-swapping the correct LoRA adapter in 0.01s before generating a response. Serve 50 experts from a single GPU without OOM!
+
+### 12. 🔄 Dynamic HuggingFace Hub Fetcher
 EvoNet-Studio is future-proof. Click the "Fetch Latest Models" button to instantly query the HuggingFace API and pull down the top trending models (e.g., latest Llama, Qwen, Gemma variants from Unsloth) straight into your training dropdowns.
 
-### 9. 📦 Model Merging & Hub Push
+### 13. 📦 Model Merging & Hub Push
 Merge your trained LoRA adapters directly into the Base Model and instantly push the standalone model to the **HuggingFace Hub** to share with the world.
+
+### 14. 📚 Continued Pre-Training (CPT)
+Train your model on massive amounts of raw text (e.g., medical textbooks, legal documents) without formatting them into Q&A. The new CPT mode allows you to inject deep domain knowledge natively into the base model before you fine-tune it for conversation.
+
+### 15. ☁️ Cloud Workspace Sync (Backup & Restore)
+Never lose your precious datasets or fine-tuned weights! The Cloud Sync tab allows you to compress your entire `outputs/` folder and securely back it up to a Private HuggingFace Dataset repository. Switch computers? Just click "Restore Workspace" to pull everything down and pick up exactly where you left off.
 
 ---
 

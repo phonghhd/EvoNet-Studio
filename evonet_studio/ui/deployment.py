@@ -9,8 +9,17 @@ def build_deployment_ui(engine: StudioEngine):
         with gr.Row():
             with gr.Column(scale=5):
                 gr.Markdown("#### 1. Server Configuration")
-                model_path = gr.Textbox(label="Model Path", value="outputs/merged_model")
-                engine_type = gr.Dropdown(choices=["vLLM (GPU Only - Extremely Fast)", "FastAPI + Transformers (CPU/GPU Fallback)"], value="vLLM (GPU Only - Extremely Fast)", label="Deployment Engine")
+                model_path = gr.Textbox(label="Base Model Path", value="outputs/merged_model")
+                
+                gr.Markdown("#### 2. Multi-LoRA MoE (Optional)")
+                gr.Markdown("Load multiple LoRA adapters into the Base Model. The Native Server will dynamically route questions to the right expert based on keywords.")
+                loras_json = gr.Textbox(
+                    label="LoRA Experts (JSON mapping: name -> path)",
+                    placeholder='{"code": "outputs/lora_code", "math": "outputs/lora_math"}',
+                    lines=2
+                )
+                
+                engine_type = gr.Dropdown(choices=["vLLM (GPU Only - Extremely Fast)", "FastAPI + Transformers (CPU/GPU Fallback)"], value="FastAPI + Transformers (CPU/GPU Fallback)", label="Deployment Engine")
                 
                 with gr.Row():
                     start_btn = gr.Button("🚀 Start Server", elem_classes=["primary"])
@@ -36,9 +45,9 @@ def build_deployment_ui(engine: StudioEngine):
                 )
                 refresh_btn = gr.Button("🔄 Refresh Server Logs")
 
-        def start_server(path, etype):
+        def start_server(path, loras, etype):
             is_vllm = "vLLM" in etype
-            msg = engine.start_server(path, is_vllm)
+            msg = engine.start_server(path, is_vllm, loras)
             return "🟢 **Status:** " + msg, engine.get_server_logs()
             
         def stop_server():
@@ -48,6 +57,6 @@ def build_deployment_ui(engine: StudioEngine):
         def update_logs():
             return engine.get_server_logs()
 
-        start_btn.click(fn=start_server, inputs=[model_path, engine_type], outputs=[server_status, log_output])
+        start_btn.click(fn=start_server, inputs=[model_path, loras_json, engine_type], outputs=[server_status, log_output])
         stop_btn.click(fn=stop_server, outputs=[server_status, log_output])
         refresh_btn.click(fn=update_logs, outputs=[log_output])

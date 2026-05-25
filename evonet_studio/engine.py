@@ -67,12 +67,13 @@ class StudioEngine:
     # ==========================================
     # SFT TRAINING
     # ==========================================
-    def start_training(self, model_name: str, dataset_path: str, epochs: int, batch_size: int, learning_rate: float, lora_rank: int, lora_alpha: int, warmup_steps: int, max_seq_length: int, output_dir: str, is_vision: bool = False, is_bitnet: bool = False):
+    def start_training(self, model_name: str, dataset_path: str, epochs: int, batch_size: int, learning_rate: float, lora_rank: int, lora_alpha: int, warmup_steps: int, max_seq_length: int, output_dir: str, is_vision: bool = False, is_bitnet: bool = False, is_cpt: bool = False):
         if self.is_training: return "Training is already in progress!"
         self.is_training = True
         self.logs = []
-        self.log(f"Starting SFT for {model_name} (Vision: {is_vision}, BitNet: {is_bitnet})...")
-        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, False, is_vision, None, is_bitnet))
+        mode = "CPT (Raw Text)" if is_cpt else "SFT (Q&A)"
+        self.log(f"Starting {mode} for {model_name} (Vision: {is_vision}, BitNet: {is_bitnet})...")
+        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, False, is_vision, None, is_bitnet, is_cpt))
         thread.start()
         return "SFT Training started. Check logs."
 
@@ -102,7 +103,7 @@ class StudioEngine:
         thread.start()
         return "Agentic Tuning started. Check logs."
 
-    def _training_thread(self, model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, is_agent, is_vision, tool_format, is_bitnet):
+    def _training_thread(self, model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, is_agent, is_vision, tool_format, is_bitnet, is_cpt=False):
         try:
             from datasets import load_dataset
             if dataset_path.endswith('.jsonl') or dataset_path.endswith('.json'):
@@ -207,10 +208,11 @@ class StudioEngine:
                         args=training_args, beta=beta, max_length=max_seq_length, max_prompt_length=max_seq_length // 2,
                     )
                 else:
-                    self.log("Starting SFT training (Native)...")
+                    self.log("Starting SFT/CPT training (Native)...")
                     from trl import SFTTrainer
                     trainer = SFTTrainer(
                         model=model, train_dataset=dataset, args=training_args, max_seq_length=max_seq_length, tokenizer=tokenizer,
+                        dataset_text_field="text" if is_cpt else None
                     )
                 
                 trainer.train()
@@ -274,8 +276,8 @@ class StudioEngine:
                 trainer.train()
                 self.log("Alignment training complete.")
             else:
-                self.log("Starting SFT fine-tuning...")
-                if is_vision:
+                self.log(f"Starting {'CPT' if is_cpt else 'SFT'} fine-tuning...")
+                if is_vision or is_cpt:
                     from trl import SFTTrainer
                     from unsloth import is_bfloat16_supported
                     from transformers import TrainingArguments
@@ -283,7 +285,7 @@ class StudioEngine:
                         model=self.wrapper._model,
                         tokenizer=self.wrapper._tokenizer,
                         train_dataset=dataset,
-                        dataset_text_field="text",
+                        dataset_text_field="text" if is_cpt else None,
                         max_seq_length=max_seq_length,
                         dataset_num_proc=2,
                         packing=False, # Vision models generally don't pack
@@ -331,6 +333,193 @@ class StudioEngine:
         )
         
         return self.synthesize_data(meta_prompt, None, provider, api_key, model_name, None, False)
+
+    # ==========================================
+    # DATA CLEANER & PREPROCESSING
+    # ==========================================
+    def analyze_dataset(self, file_path: str):
+        import json
+        import os
+        
+        if not os.path.exists(file_path):
+            return f"❌ Error: File {file_path} does not exist."
+            
+        try:
+            total_rows = 0
+            invalid_rows = 0
+            hashes = set()
+            duplicates = 0
+            est_tokens = 0
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    total_rows += 1
+                    try:
+                        data = json.loads(line)
+                        # Basic chatml heuristic
+                        if "messages" not in data and "prompt" not in data and "instruction" not in data:
+                            invalid_rows += 1
+                            continue
+                            
+                        # Deduplication using string hash
+                        content_str = json.dumps(data, sort_keys=True)
+                        h = hash(content_str)
+                        if h in hashes:
+                            duplicates += 1
+                        else:
+                            hashes.add(h)
+                            
+                        # Est tokens (very rough approximation: 1 word ~ 1.3 tokens)
+                        words = len(content_str.split())
+                        est_tokens += int(words * 1.3)
+                        
+                    except json.JSONDecodeError:
+                        invalid_rows += 1
+                        
+            report = f"### 📊 Dataset Health Report\n\n"
+            report += f"- **Total Rows:** {total_rows}\n"
+            report += f"- **Valid Rows:** {total_rows - invalid_rows}\n"
+            report += f"- **Invalid/Corrupt Rows:** {invalid_rows} ⚠️\n"
+            report += f"- **Exact Duplicates:** {duplicates} ♻️\n"
+            report += f"- **Estimated Total Tokens:** ~{est_tokens:,}\n"
+            
+            if duplicates > 0 or invalid_rows > 0:
+                report += "\n> **Recommendation:** Please use the Clean & Format tool before training to avoid wasting VRAM on bad data."
+            else:
+                report += "\n> **Status:** 🟢 Dataset is perfectly healthy!"
+                
+            return report
+            
+        except Exception as e:
+            return f"❌ Error during analysis: {e}"
+
+    def clean_dataset(self, file_path: str, output_path: str, remove_dups: bool, remove_short: bool):
+        import json
+        import os
+        
+        if not os.path.exists(file_path):
+            return f"❌ Error: File {file_path} does not exist."
+            
+        try:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            hashes = set()
+            kept = 0
+            dropped_dups = 0
+            dropped_short = 0
+            
+            with open(file_path, 'r', encoding='utf-8') as fin, open(output_path, 'w', encoding='utf-8') as fout:
+                for line in fin:
+                    try:
+                        data = json.loads(line)
+                        content_str = json.dumps(data, sort_keys=True)
+                        
+                        if remove_dups:
+                            h = hash(content_str)
+                            if h in hashes:
+                                dropped_dups += 1
+                                continue
+                            hashes.add(h)
+                            
+                        if remove_short:
+                            words = len(content_str.split())
+                            if words < 5:
+                                dropped_short += 1
+                                continue
+                                
+                        fout.write(json.dumps(data, ensure_ascii=False) + "\n")
+                        kept += 1
+                        
+                    except json.JSONDecodeError:
+                        continue # Drop invalid
+                        
+            return f"### ✨ Cleaning Complete\n\n- **Rows Kept:** {kept}\n- **Duplicates Removed:** {dropped_dups}\n- **Short/Invalid Removed:** {dropped_short}\n- **Saved to:** `{output_path}`"
+        except Exception as e:
+            return f"❌ Error during cleaning: {e}"
+
+    # ==========================================
+    # DATA FLYWHEEL (TELEMETRY)
+    # ==========================================
+    def get_telemetry_logs(self):
+        import json
+        import os
+        
+        file_path = "outputs/production_logs.jsonl"
+        if not os.path.exists(file_path):
+            return []
+            
+        logs = []
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    try:
+                        data = json.loads(line)
+                        logs.append(data)
+                    except json.JSONDecodeError:
+                        pass
+        except Exception as e:
+            self.log(f"Error reading telemetry logs: {e}")
+            
+        # Return newest first
+        return logs[::-1]
+
+    def convert_log_to_dpo(self, prompt: str, chosen: str, rejected: str):
+        # We reuse save_arena_vote since it writes to the exact same format and file
+        return self.save_arena_vote(prompt, chosen, rejected)
+
+    # ==========================================
+    # CLOUD SYNC & BACKUP
+    # ==========================================
+    def backup_workspace(self, hf_token: str, repo_id: str):
+        import subprocess
+        import os
+        try:
+            self.log(f"Backing up workspace (outputs/) to {repo_id}...")
+            # We compress outputs directory
+            if not os.path.exists("outputs"):
+                return "❌ Error: 'outputs' directory does not exist. Nothing to backup."
+                
+            # Tar the outputs directory
+            os.system("tar -czf workspace_backup.tar.gz outputs/")
+            
+            # Use HuggingFace CLI to upload
+            cmd = f"huggingface-cli upload {repo_id} workspace_backup.tar.gz workspace_backup.tar.gz --repo-type dataset --token {hf_token}"
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            for line in iter(process.stdout.readline, ''):
+                if line:
+                    self.log(line.strip())
+            process.wait()
+            
+            if process.returncode == 0:
+                os.remove("workspace_backup.tar.gz")
+                return f"✅ Backup successful to https://huggingface.co/datasets/{repo_id}"
+            else:
+                return "❌ Backup failed. Please check your token and repo ID (must be a dataset repo)."
+        except Exception as e:
+            return f"❌ Error during backup: {e}"
+
+    def restore_workspace(self, hf_token: str, repo_id: str):
+        import subprocess
+        import os
+        try:
+            self.log(f"Restoring workspace from {repo_id}...")
+            # Use HuggingFace CLI to download
+            cmd = f"huggingface-cli download {repo_id} workspace_backup.tar.gz --repo-type dataset --local-dir . --token {hf_token}"
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            for line in iter(process.stdout.readline, ''):
+                if line:
+                    self.log(line.strip())
+            process.wait()
+            
+            if process.returncode == 0 and os.path.exists("workspace_backup.tar.gz"):
+                # Untar
+                os.system("tar -xzf workspace_backup.tar.gz")
+                os.remove("workspace_backup.tar.gz")
+                return "✅ Restore successful! Your 'outputs/' folder is back."
+            else:
+                return "❌ Restore failed. Please check if the backup exists on your HuggingFace repo."
+        except Exception as e:
+            return f"❌ Error during restore: {e}"
 
     # ==========================================
     # DATA SYNTHESIS
@@ -571,7 +760,7 @@ class StudioEngine:
     # ==========================================
     # 1-CLICK DEPLOYMENT
     # ==========================================
-    def start_server(self, model_path: str, is_vllm: bool):
+    def start_server(self, model_path: str, is_vllm: bool, loras_json: str = ""):
         if self.server_process is not None:
             return "Server is already running."
             
@@ -582,8 +771,13 @@ class StudioEngine:
         
         try:
             # We spawn a completely independent process
+            cmd = [sys.executable, "-m", "evonet_studio.server", "--model", model_path, "--engine", engine_type]
+            if loras_json and loras_json.strip():
+                cmd.extend(["--loras", loras_json.strip()])
+                self.server_logs.append(f"Loading LoRA Experts: {loras_json}")
+                
             self.server_process = subprocess.Popen(
-                [sys.executable, "-m", "evonet_studio.server", "--model", model_path, "--engine", engine_type],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -695,6 +889,61 @@ class StudioEngine:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
             
         return f"✅ Đã lưu kết quả vào {file_path}! Bạn có thể dùng tệp này ở Tab DPO Alignment."
+
+    # ==========================================
+    # AUTOMATED BENCHMARK (LM-EVAL)
+    # ==========================================
+    def run_benchmark(self, model_path: str, tasks: list, num_fewshot: int, limit: int):
+        if self.is_training: return "Engine is busy (Training/Benchmarking). Please wait."
+        self.is_training = True
+        self.logs = []
+        
+        task_str = ",".join(tasks)
+        self.log(f"Starting Academic Benchmark on {model_path} for tasks: {task_str}...")
+        
+        thread = threading.Thread(target=self._benchmark_thread, args=(model_path, task_str, num_fewshot, limit))
+        thread.start()
+        return "Benchmark process started in the background. Check logs."
+
+    def _benchmark_thread(self, model_path: str, tasks: str, num_fewshot: int, limit: int):
+        import subprocess
+        import os
+        try:
+            self.log("Checking if `lm_eval` is installed...")
+            try:
+                import lm_eval
+                self.log("`lm_eval` is available. Preparing benchmark execution...")
+            except ImportError:
+                self.log("⚠️ `lm_eval` is not installed! This is an optional dependency.")
+                self.log("To run benchmarks, please open your terminal, activate venv, and run:")
+                self.log("pip install lm-eval")
+                self.is_training = False
+                return
+                
+            limit_arg = f"--limit {limit}" if limit > 0 else ""
+            fewshot_arg = f"--num_fewshot {num_fewshot}"
+            
+            cmd = f"python -m lm_eval --model hf --model_args pretrained={model_path} --tasks {tasks} {fewshot_arg} {limit_arg} --device cuda"
+            self.log(f"Executing: {cmd}")
+            
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            
+            for line in iter(process.stdout.readline, ''):
+                if line:
+                    self.log(line.strip())
+                    
+            process.stdout.close()
+            return_code = process.wait()
+            
+            if return_code == 0:
+                self.log("✅ Benchmark completed successfully!")
+            else:
+                self.log(f"❌ Benchmark failed with exit code {return_code}.")
+                
+        except Exception as e:
+            self.log(f"❌ Critical Benchmark Error: {str(e)}")
+        finally:
+            self.is_training = False
 
     # ==========================================
     # SYSTEM MONITOR
