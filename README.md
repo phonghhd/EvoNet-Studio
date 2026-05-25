@@ -88,10 +88,26 @@ bash setup.sh
 source venv/bin/activate
 
 # 4. Start the Studio!
+
+Bạn có thể khởi động EvoNet-Studio Pro bằng nhiều cách tùy theo nhu cầu bảo mật:
+
+**Chạy Cục bộ (Local - Khuyên dùng cho cá nhân):**
+```bash
 python3 app.py
 ```
+*(Chỉ truy cập được từ máy tính của bạn thông qua `http://localhost:7860`)*
 
-*The Gradio interface will automatically open at `http://localhost:7860`.*
+**Chạy trên Cloud/Kaggle (Cần Public Link):**
+```bash
+python3 app.py --share
+```
+*(Tạo đường link `.gradio.live`. Lưu ý: Ai có link cũng có thể vào được!)*
+
+**Chạy trên Cloud với Mật khẩu Bảo mật (Khuyên dùng):**
+```bash
+python3 app.py --share --auth admin:matkhau123
+```
+*(Tạo link Public nhưng bị khóa bởi màn hình Đăng nhập. Thay đổi `admin:matkhau123` thành tài khoản và mật khẩu của bạn).*
 
 ---
 

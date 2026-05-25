@@ -157,5 +157,26 @@ def create_app():
     return demo, theme, custom_css
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Launch EvoNet-Studio Pro")
+    parser.add_argument("--share", action="store_true", help="Create a public Gradio link (Useful for Kaggle/Colab)")
+    parser.add_argument("--auth", type=str, default=None, help="Set authentication for public link. Format: 'username:password'")
+    parser.add_argument("--port", type=int, default=7860, help="Port to run the WebUI on")
+    args = parser.parse_args()
+    
     app, theme, custom_css = create_app()
-    app.launch(server_name="0.0.0.0", server_port=7860, share=True)
+    print(f"[*] Khởi động EvoNet-Studio Pro...")
+    
+    auth_tuple = None
+    if args.auth:
+        try:
+            user, pwd = args.auth.split(":")
+            auth_tuple = (user, pwd)
+            print(f"[*] Chế độ bảo mật được kích hoạt. Đăng nhập với tài khoản: {user}")
+        except ValueError:
+            print("[!] Lỗi tham số --auth. Vui lòng truyền theo định dạng 'username:password'.")
+            
+    if args.share and not args.auth:
+        print("[!] CẢNH BÁO: Bạn đang tạo Public Link nhưng KHÔNG bật bảo mật (--auth). Ai có link cũng có thể truy cập!")
+    
+    app.launch(server_name="0.0.0.0", server_port=args.port, share=args.share, auth=auth_tuple)
