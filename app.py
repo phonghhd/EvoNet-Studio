@@ -119,7 +119,7 @@ def create_app():
         panel_background_fill="rgba(15, 23, 42, 0.7)",
     )
     
-    with gr.Blocks(title="EvoNet-Studio Pro") as demo:
+    with gr.Blocks(title="EvoNet-Studio Pro", theme=theme, css=custom_css) as demo:
         gr.HTML(
             """
             <div style="text-align: center; max-width: 900px; margin: 0 auto; padding: 30px 0;">
@@ -158,4 +158,4 @@ def create_app():
 
 if __name__ == "__main__":
     app, theme, custom_css = create_app()
-    app.launch(server_name="0.0.0.0", server_port=7860, share=False, theme=theme, css=custom_css)
+    app.launch(server_name="0.0.0.0", server_port=7860, share=False)
