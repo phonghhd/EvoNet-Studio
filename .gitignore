@@ -37,3 +37,14 @@ dataset/
 tmp_pip/
 logs/
 nohup.out
+
+# Enterprise Edition (Bảo mật - KHÔNG PUSH LÊN PUBLIC GITHUB)
+license.key
+build/
+*.so
+*.pyd
+evonet_studio/enterprise/
+app_enterprise.py
+compile_enterprise.py
+Dockerfile.enterprise
+portal/

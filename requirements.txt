@@ -15,3 +15,4 @@ sentence-transformers
 PyPDF2
 fastapi
 uvicorn
+presidio-analyzer\npresidio-anonymizer\nspacy\nfastapi\nuvicorn\nCython\n

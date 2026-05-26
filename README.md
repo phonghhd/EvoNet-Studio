@@ -149,7 +149,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💖 Support & Donate (Ủng hộ dự án)
 
-Nếu bạn thấy **EvoNet-Studio Pro** hữu ích cho công việc, học tập hoặc doanh nghiệp của bạn, hãy cân nhắc ủng hộ (donate) để tiếp thêm động lực cho chúng tôi duy trì và phát triển thêm nhiều siêu tính năng mới trong tương lai!
+Nếu bạn thấy **EvoNet-Studio Pro** hữu ích cho công việc, học tập của bạn, hãy cân nhắc ủng hộ (donate) để tiếp thêm động lực cho chúng tôi duy trì và phát triển thêm nhiều siêu tính năng mới trong tương lai!
 
 Mọi sự đóng góp dù nhỏ nhất đều là nguồn động viên vô giá đối với những người làm mã nguồn mở.
 
