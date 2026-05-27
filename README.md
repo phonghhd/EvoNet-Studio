@@ -140,6 +140,12 @@ EvoNet-Studio intelligently detects your hardware capabilities:
 - **GPU Present:** The system will dynamically load `Unsloth` kernels to perform 4-bit quantization fine-tuning, resulting in 2x faster training and 70% less VRAM usage.
 - **CPU Only:** The system gracefully falls back to native HuggingFace `transformers` and `trl`, allowing you to develop, test, and run the entire pipeline even without a dedicated graphics card.
 
+## 📚 Official Documentation
+
+Tài liệu hướng dẫn chi tiết dành cho các phiên bản của EvoNet-Studio:
+- [📖 Hướng Dẫn Bản Open-Source Miễn Phí (Github)](docs/Open_Source_Guide.md)
+- [🏢 Tài Liệu Vận Hành Bản Enterprise (Doanh Nghiệp)](docs/Enterprise_Manual.md)
+
 ## 🤝 Contributing
 
 Contributions are welcome! If you'd like to add support for new Alignment algorithms, better UI elements, or new Deployment engines, feel free to submit a Pull Request.

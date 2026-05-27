@@ -48,3 +48,5 @@ app_enterprise.py
 compile_enterprise.py
 Dockerfile.enterprise
 portal/
+qa_tests/
+.pytest_cache/

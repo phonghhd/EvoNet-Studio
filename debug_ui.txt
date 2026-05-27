@@ -1,0 +1,55 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.7, pytest-9.0.3, pluggy-1.6.0 -- /home/phong/EvoNet-Studio/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/phong/EvoNet-Studio
+plugins: typeguard-4.5.2, anyio-4.13.0
+collecting ... collected 1 item
+
+qa_tests/test_ui_builder.py::test_gradio_app_creation FAILED             [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_gradio_app_creation ___________________________
+
+    def test_gradio_app_creation():
+        """Kiểm thử: Xây dựng toàn bộ giao diện Gradio mà không văng Exception (Syntax/Variable)."""
+        # Hàm create_app() chạy qua tất cả 15 ui builders.
+        # Nếu có biến nào gọi sai tên, Python sẽ ném NameError hoặc AttributeError ngay.
+        try:
+            demo = create_app()
+            assert demo is not None
+>           assert demo.is_running is False # App được build nhưng chưa được launch
+                   ^^^^^^^^^^^^^^^
+E           AttributeError: 'tuple' object has no attribute 'is_running'
+
+qa_tests/test_ui_builder.py:16: AttributeError
+
+During handling of the above exception, another exception occurred:
+
+    def test_gradio_app_creation():
+        """Kiểm thử: Xây dựng toàn bộ giao diện Gradio mà không văng Exception (Syntax/Variable)."""
+        # Hàm create_app() chạy qua tất cả 15 ui builders.
+        # Nếu có biến nào gọi sai tên, Python sẽ ném NameError hoặc AttributeError ngay.
+        try:
+            demo = create_app()
+            assert demo is not None
+            assert demo.is_running is False # App được build nhưng chưa được launch
+        except Exception as e:
+>           pytest.fail(f"Gradio UI failed to build due to exception: {str(e)}")
+E           Failed: Gradio UI failed to build due to exception: 'tuple' object has no attribute 'is_running'
+
+qa_tests/test_ui_builder.py:18: Failed
+----------------------------- Captured stdout call -----------------------------
+WARNING: vietnamese_ai or unsloth could not be loaded (Unsloth cannot find any torch accelerator? You need a GPU.). Running in Native HF mode.
+=============================== warnings summary ===============================
+qa_tests/test_ui_builder.py::test_gradio_app_creation
+  /home/phong/EvoNet-Studio/venv/lib/python3.13/site-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+    import pynvml  # type: ignore[import]
+
+qa_tests/test_ui_builder.py::test_gradio_app_creation
+  /home/phong/EvoNet-Studio/app.py:122: UserWarning: The parameters have been moved from the Blocks constructor to the launch() method in Gradio 6.0: theme, css. Please pass these parameters to launch() instead.
+    with gr.Blocks(title="EvoNet-Studio Pro", theme=theme, css=custom_css) as demo:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED qa_tests/test_ui_builder.py::test_gradio_app_creation - Failed: Gradio...
+======================== 1 failed, 2 warnings in 43.33s ========================
