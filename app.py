@@ -24,6 +24,7 @@ from evonet_studio.ui.dataset_cleaner import build_dataset_cleaner_ui
 from evonet_studio.ui.benchmark import build_benchmark_ui
 from evonet_studio.ui.telemetry import build_telemetry_ui
 from evonet_studio.ui.cloud_sync import build_cloud_sync_ui
+from evonet_studio.ui.lora_manager import build_lora_manager_ui
 
 def create_app():
     # Initialize Engine
@@ -142,6 +143,7 @@ def create_app():
             build_dataset_ui(engine)
             build_arena_ui(engine)
             build_telemetry_ui(engine)
+            build_lora_manager_ui(engine)
             build_evaluation_ui(engine)
             build_benchmark_ui(engine)
             build_rag_ui(engine)

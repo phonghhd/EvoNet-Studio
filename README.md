@@ -57,20 +57,33 @@ Once trained, deploy your model as a production-grade API server (`http://localh
 - **vLLM Engine:** For those with powerful GPUs, deploy with PagedAttention for maximum throughput.
 - **FastAPI Engine:** Native CPU/GPU fallback using standard Transformers (supports Production Telemetry).
 
-### 11. 🧩 Multi-LoRA MoE Router (LoRAX)
+### 11. 🧩 Multi-LoRA MoE Router (LoRAX) & LoRA Manager
 Never suffer from Catastrophic Forgetting again! Instead of overwriting your base model, train isolated LoRA experts (e.g., Code, Math, Law). In the API Deployment tab, load your Base Model and pass a JSON dictionary of your LoRA adapters. The Native Server acts as a **Mixture-of-Experts (MoE) Router**, dynamically analyzing incoming prompts and hot-swapping the correct LoRA adapter in 0.01s before generating a response. Serve 50 experts from a single GPU without OOM!
+You can easily manage all your trained adapters using the dedicated **LoRA Manager** Tab.
 
 ### 12. 🔄 Dynamic HuggingFace Hub Fetcher
 EvoNet-Studio is future-proof. Click the "Fetch Latest Models" button to instantly query the HuggingFace API and pull down the top trending models (e.g., latest Llama, Qwen, Gemma variants from Unsloth) straight into your training dropdowns.
 
-### 13. 📦 Model Merging & Hub Push
-Merge your trained LoRA adapters directly into the Base Model and instantly push the standalone model to the **HuggingFace Hub** to share with the world.
+### 13. 📦 Model Merging, GGUF Export & Ollama Push
+Merge your trained LoRA adapters directly into the Base Model and instantly push the standalone model to the **HuggingFace Hub** to share with the world. You can also export the model to **GGUF** format and push it directly to **Ollama** with a single click to run on local CPU/Edge devices!
 
 ### 14. 📚 Continued Pre-Training (CPT)
 Train your model on massive amounts of raw text (e.g., medical textbooks, legal documents) without formatting them into Q&A. The new CPT mode allows you to inject deep domain knowledge natively into the base model before you fine-tune it for conversation.
 
 ### 15. ☁️ Cloud Workspace Sync (Backup & Restore)
 Never lose your precious datasets or fine-tuned weights! The Cloud Sync tab allows you to compress your entire `outputs/` folder and securely back it up to a Private HuggingFace Dataset repository. Switch computers? Just click "Restore Workspace" to pull everything down and pick up exactly where you left off.
+
+---
+
+## 💼 Enterprise Features (Paid Version Only)
+
+For corporate environments and heavy workloads, the **EvoNet-Studio Enterprise Edition** includes:
+1. **API Key Gateway & Rate Limiting:** Prevent D-DoS and control token usage with internal API keys.
+2. **SSO & OAuth2 Integration:** 1-Click login via Google/Microsoft Azure AD for entire teams.
+3. **Multi-Node Distributed Training:** Seamlessly enable DeepSpeed ZeRO-3 to distribute heavy training across multiple physical GPU nodes.
+4. **GPU Cost Dashboard:** Real-time tracking of GPU uptime and estimated compute costs (in USD).
+5. **Canary & A/B Deployments:** Safely route a percentage of API traffic to a Challenger Model to test in production.
+6. **Hardware Lock & Auto PII Masking:** Compliance and security for sensitive data.
 
 ---
 
@@ -145,6 +158,14 @@ EvoNet-Studio intelligently detects your hardware capabilities:
 Tài liệu hướng dẫn chi tiết dành cho các phiên bản của EvoNet-Studio:
 - [📖 Hướng Dẫn Bản Open-Source Miễn Phí (Github)](docs/Open_Source_Guide.md)
 - [🏢 Tài Liệu Vận Hành Bản Enterprise (Doanh Nghiệp)](docs/Enterprise_Manual.md)
+
+## 🚀 Future Roadmap
+
+EvoNet-Studio is constantly evolving. In the upcoming Q3/Q4 releases, we are planning to introduce:
+- **Apple Silicon (MPS) Optimization:** Enhanced hardware acceleration for MacOS users without NVIDIA cards.
+- **Llama.cpp WebUI Integration:** Connect directly to local model management interfaces for smoother execution.
+- **Multi-Tenant Architecture (Enterprise):** True SaaS-ready architecture allowing a single installation to serve multiple isolated departments.
+- **Advanced RAG Evaluation Suites (Enterprise):** Built-in RAG measurement tools (RAGAS, TruLens) directly on the dashboard to score AI factual accuracy.
 
 ## 🤝 Contributing
 

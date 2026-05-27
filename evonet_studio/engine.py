@@ -21,6 +21,7 @@ class StudioEngine:
         self.server_logs = []
         self.vector_db = None
         self.vector_corpus = []
+        self.total_gpu_cost = 0.0 # MVP cost tracker
         
         self.use_unsloth = False
         try:
@@ -67,13 +68,45 @@ class StudioEngine:
     # ==========================================
     # SFT TRAINING
     # ==========================================
-    def start_training(self, model_name: str, dataset_path: str, epochs: int, batch_size: int, learning_rate: float, lora_rank: int, lora_alpha: int, warmup_steps: int, max_seq_length: int, output_dir: str, is_vision: bool = False, is_bitnet: bool = False, is_cpt: bool = False):
+    def suggest_hyperparameters(self, dataset_path: str) -> tuple:
+        import os
+        epochs = 3
+        batch_size = 2
+        learning_rate = 2e-4
+        
+        if not os.path.exists(dataset_path):
+            self.log("Cannot suggest HP: dataset not found locally (maybe using HF ID). Using defaults.")
+            return epochs, batch_size, learning_rate
+            
+        try:
+            with open(dataset_path, 'r', encoding='utf-8') as f:
+                lines = sum(1 for _ in f)
+                
+            if lines < 1000:
+                epochs = 5
+                batch_size = 2
+                learning_rate = 1e-4
+                self.log(f"Dataset is small ({lines} rows). Suggesting more epochs (5) and lower LR (1e-4).")
+            elif lines > 10000:
+                epochs = 1
+                batch_size = 4
+                learning_rate = 2e-4
+                self.log(f"Dataset is large ({lines} rows). Suggesting fewer epochs (1) and larger batch (4).")
+            else:
+                self.log(f"Dataset is medium ({lines} rows). Suggesting standard parameters (epochs: 3, batch: 2).")
+                
+        except Exception as e:
+            self.log(f"Error reading dataset: {e}")
+            
+        return epochs, batch_size, learning_rate
+
+    def start_training(self, model_name: str, dataset_path: str, epochs: int, batch_size: int, learning_rate: float, lora_rank: int, lora_alpha: int, warmup_steps: int, max_seq_length: int, output_dir: str, is_vision: bool = False, is_bitnet: bool = False, is_cpt: bool = False, is_distributed: bool = False):
         if self.is_training: return "Training is already in progress!"
         self.is_training = True
         self.logs = []
         mode = "CPT (Raw Text)" if is_cpt else "SFT (Q&A)"
-        self.log(f"Starting {mode} for {model_name} (Vision: {is_vision}, BitNet: {is_bitnet})...")
-        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, False, is_vision, None, is_bitnet, is_cpt))
+        self.log(f"Starting {mode} for {model_name} (Vision: {is_vision}, BitNet: {is_bitnet}, Distributed: {is_distributed})...")
+        thread = threading.Thread(target=self._training_thread, args=(model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, False, 0.1, False, False, False, is_vision, None, is_bitnet, is_cpt, is_distributed))
         thread.start()
         return "SFT Training started. Check logs."
 
@@ -103,7 +136,9 @@ class StudioEngine:
         thread.start()
         return "Agentic Tuning started. Check logs."
 
-    def _training_thread(self, model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, is_agent, is_vision, tool_format, is_bitnet, is_cpt=False):
+    def _training_thread(self, model_name, dataset_path, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir, is_dpo, beta, is_orpo, is_kto, is_agent, is_vision, tool_format, is_bitnet, is_cpt=False, is_distributed=False):
+        import time
+        start_time = time.time()
         try:
             from datasets import load_dataset
             if dataset_path.endswith('.jsonl') or dataset_path.endswith('.json'):
@@ -176,7 +211,8 @@ class StudioEngine:
                     fp16=device=="cuda" and not torch.cuda.is_bf16_supported(),
                     bf16=device=="cuda" and torch.cuda.is_bf16_supported(),
                     optim="adamw_torch" if device=="cpu" else "adamw_8bit",
-                    report_to="none"
+                    report_to="none",
+                    deepspeed="ds_config.json" if is_distributed else None
                 )
                 
                 if is_agent:
@@ -247,7 +283,8 @@ class StudioEngine:
                     output_dir=output_dir, num_train_epochs=epochs, per_device_train_batch_size=batch_size,
                     learning_rate=learning_rate, warmup_steps=warmup_steps,
                     fp16=not torch.cuda.is_bf16_supported(), bf16=torch.cuda.is_bf16_supported(),
-                    optim="adamw_8bit", report_to="none"
+                    optim="adamw_8bit", report_to="none",
+                    deepspeed="ds_config.json" if is_distributed else None
                 )
                 
                 if is_dpo:
@@ -302,6 +339,7 @@ class StudioEngine:
                             lr_scheduler_type="linear",
                             seed=3407,
                             output_dir=output_dir,
+                            deepspeed="ds_config.json" if is_distributed else None
                         ),
                     )
                     trainer.train()
@@ -316,6 +354,13 @@ class StudioEngine:
             self.log(traceback.format_exc())
         finally:
             self.is_training = False
+            elapsed_hours = (time.time() - start_time) / 3600.0
+            cost = elapsed_hours * 3.0 # Assume $3/hr for A100
+            self.total_gpu_cost += cost
+            self.log(f"Training completed. Elapsed: {elapsed_hours:.2f} hours. Est. Cost: ${cost:.2f}")
+
+    def get_gpu_cost_stats(self):
+        return f"${self.total_gpu_cost:.2f}"
 
     def optimize_prompt(self, raw_prompt: str, provider: str, api_key: str, model_name: str) -> str:
         """Sử dụng LLM API để tối ưu hóa lệnh thô thành System Prompt chuyên nghiệp."""
@@ -574,6 +619,22 @@ class StudioEngine:
         return "Synthesis task started. Check logs."
 
     # ==========================================
+    # LORA MANAGEMENT
+    # ==========================================
+    def get_lora_adapters(self) -> list:
+        """Scan the outputs directory for LoRA adapters."""
+        import os
+        adapters = []
+        if not os.path.exists("outputs"):
+            return adapters
+        for root, dirs, files in os.walk("outputs"):
+            if "adapter_config.json" in files:
+                size_bytes = sum(os.path.getsize(os.path.join(root, f)) for f in files)
+                size_mb = round(size_bytes / (1024 * 1024), 2)
+                adapters.append([root, f"{size_mb} MB"])
+        return adapters
+
+    # ==========================================
     # EXPORT & HUB
     # ==========================================
     def merge_lora(self, base_model: str, lora_path: str, out_path: str):
@@ -637,6 +698,40 @@ class StudioEngine:
         except Exception as e:
             return f"Export failed: {str(e)}"
 
+    def push_to_ollama(self, gguf_path: str, model_name: str) -> str:
+        self.logs = []
+        self.log(f"Pushing {gguf_path} to Ollama as '{model_name}'...")
+        def _ollama_thread():
+            import subprocess
+            import os
+            try:
+                if not gguf_path.endswith('.gguf'):
+                    # attempt to find the gguf file if user just passed the base dir
+                    # we will just assume they need to pass the explicit path
+                    pass
+                
+                modelfile_path = "Modelfile"
+                with open(modelfile_path, "w", encoding='utf-8') as f:
+                    f.write(f"FROM {gguf_path}\n")
+                
+                self.log("Running `ollama create`...")
+                cmd = f"ollama create {model_name} -f {modelfile_path}"
+                process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                for line in iter(process.stdout.readline, ''):
+                    if line:
+                        self.log(line.strip())
+                process.wait()
+                
+                if process.returncode == 0:
+                    self.log(f"✅ Successfully pushed to Ollama! Run in terminal: ollama run {model_name}")
+                else:
+                    self.log("❌ Failed to push to Ollama. Make sure Ollama is installed and running.")
+            except Exception as e:
+                self.log(f"❌ Error during Ollama push: {str(e)}")
+        import threading
+        threading.Thread(target=_ollama_thread).start()
+        return "Ollama push started. Check logs."
+
     # ==========================================
     # CHAT / INFERENCE
     # ==========================================
@@ -650,7 +745,7 @@ class StudioEngine:
         except Exception as e:
             return f"Failed to load: {str(e)}"
 
-    def chat_inference_stream(self, message: str, history: list, enable_memgpt: bool = False):
+    def chat_inference_stream(self, message: str, history: list, enable_memgpt: bool = False, show_speed: bool = True):
         if self.loaded_chat_model is None:
             yield f"Error: Model not loaded."
             return
@@ -658,6 +753,7 @@ class StudioEngine:
         try:
             from transformers import TextIteratorStreamer
             import threading
+            import time
             
             prompt = ""
             if enable_memgpt:
@@ -697,9 +793,20 @@ class StudioEngine:
             thread.start()
             
             generated_text = ""
+            start_time = time.time()
+            token_count = 0
+            
             for new_text in streamer:
                 generated_text += new_text
+                token_count += 1
                 yield generated_text
+                
+            if show_speed and token_count > 0:
+                elapsed = time.time() - start_time
+                if elapsed > 0:
+                    speed = token_count / elapsed
+                    generated_text += f"\n\n*(Speed: {speed:.2f} tokens/sec)*"
+                    yield generated_text
         except Exception as e:
             yield f"Error during generation: {str(e)}"
 
@@ -760,14 +867,20 @@ class StudioEngine:
     # ==========================================
     # 1-CLICK DEPLOYMENT
     # ==========================================
-    def start_server(self, model_path: str, is_vllm: bool, loras_json: str = ""):
+    def start_server(self, model_path: str, is_vllm: bool, loras_json: str = "", ab_enable: bool = False, path_b: str = "", split: int = 0):
         if self.server_process is not None:
             return "Server is already running."
             
         import subprocess
+        import sys
+        import threading
+        
         engine_type = "vllm" if is_vllm else "native"
         self.server_logs = []
         self.server_logs.append(f"Starting server with {engine_type} engine...")
+        
+        if ab_enable:
+            self.server_logs.append(f"A/B Testing Enabled. Model A: {model_path}, Model B: {path_b}, Split: {split}% to B")
         
         try:
             # We spawn a completely independent process
@@ -775,6 +888,9 @@ class StudioEngine:
             if loras_json and loras_json.strip():
                 cmd.extend(["--loras", loras_json.strip()])
                 self.server_logs.append(f"Loading LoRA Experts: {loras_json}")
+            
+            if ab_enable:
+                cmd.extend(["--ab-model", path_b, "--ab-split", str(split)])
                 
             self.server_process = subprocess.Popen(
                 cmd,

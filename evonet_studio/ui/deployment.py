@@ -9,7 +9,13 @@ def build_deployment_ui(engine: StudioEngine):
         with gr.Row():
             with gr.Column(scale=5):
                 gr.Markdown("#### 1. Server Configuration")
-                model_path = gr.Textbox(label="Base Model Path", value="outputs/merged_model")
+                model_path = gr.Textbox(label="Base Model Path (Model A)", value="outputs/merged_model")
+                
+                gr.Markdown("#### 🌟 Enterprise Canary / A-B Deployment")
+                with gr.Row():
+                    enable_ab = gr.Checkbox(label="Enable A/B Testing Routing", value=False, elem_classes=["enterprise-feature"])
+                    model_b_path = gr.Textbox(label="Challenger Model Path (Model B)", value="outputs/challenger_model")
+                    traffic_split = gr.Slider(minimum=0, maximum=100, step=1, value=20, label="Traffic to Model B (%)")
                 
                 gr.Markdown("#### 2. Multi-LoRA MoE (Optional)")
                 gr.Markdown("Load multiple LoRA adapters into the Base Model. The Native Server will dynamically route questions to the right expert based on keywords.")
@@ -45,9 +51,9 @@ def build_deployment_ui(engine: StudioEngine):
                 )
                 refresh_btn = gr.Button("🔄 Refresh Server Logs")
 
-        def start_server(path, loras, etype):
+        def start_server(path, loras, etype, ab_enable, path_b, split):
             is_vllm = "vLLM" in etype
-            msg = engine.start_server(path, is_vllm, loras)
+            msg = engine.start_server(path, is_vllm, loras, ab_enable, path_b, split)
             return "🟢 **Status:** " + msg, engine.get_server_logs()
             
         def stop_server():
@@ -57,6 +63,6 @@ def build_deployment_ui(engine: StudioEngine):
         def update_logs():
             return engine.get_server_logs()
 
-        start_btn.click(fn=start_server, inputs=[model_path, loras_json, engine_type], outputs=[server_status, log_output])
+        start_btn.click(fn=start_server, inputs=[model_path, loras_json, engine_type, enable_ab, model_b_path, traffic_split], outputs=[server_status, log_output])
         stop_btn.click(fn=stop_server, outputs=[server_status, log_output])
         refresh_btn.click(fn=update_logs, outputs=[log_output])

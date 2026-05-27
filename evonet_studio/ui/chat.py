@@ -22,12 +22,14 @@ def build_chat_ui(engine: StudioEngine):
             
         load_btn.click(fn=load_model_callback, inputs=[model_path], outputs=[load_status])
         
-        enable_memgpt = gr.Checkbox(label="🧠 Enable MemGPT (Long-Term Vector Memory)", value=False)
+        with gr.Row():
+            enable_memgpt = gr.Checkbox(label="🧠 Enable MemGPT (Long-Term Vector Memory)", value=False)
+            show_speed = gr.Checkbox(label="⚡ Show Generation Speed (Tokens/sec)", value=True)
         
         # Use ChatInterface with streaming function and additional inputs
         chatbot = gr.ChatInterface(
             fn=engine.chat_inference_stream,
-            additional_inputs=[enable_memgpt],
+            additional_inputs=[enable_memgpt, show_speed],
             title="EvoNet-Studio Chat",
             description="Chat with your model in real-time. (Make sure to load it first!)"
         )

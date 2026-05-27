@@ -9,6 +9,7 @@ def build_monitor_ui(engine: StudioEngine):
         with gr.Row():
             cpu_text = gr.Textbox(label="CPU Usage", interactive=False)
             ram_text = gr.Textbox(label="RAM Usage", interactive=False)
+            cost_text = gr.Textbox(label="💰 Estimated GPU Training Cost (A100)", interactive=False, elem_classes=["enterprise-feature"])
             
         gpu_json = gr.JSON(label="GPU Statistics")
         
@@ -18,6 +19,7 @@ def build_monitor_ui(engine: StudioEngine):
             stats = engine.get_system_stats()
             cpu = f"{stats['cpu_percent']}%"
             ram = f"{stats['ram_used']:.1f} GB / {stats['ram_total']:.1f} GB ({stats['ram_percent']}%)"
-            return cpu, ram, stats['gpus']
+            cost = engine.get_gpu_cost_stats()
+            return cpu, ram, cost, stats['gpus']
             
-        refresh_btn.click(fn=update_stats, outputs=[cpu_text, ram_text, gpu_json])
+        refresh_btn.click(fn=update_stats, outputs=[cpu_text, ram_text, cost_text, gpu_json])

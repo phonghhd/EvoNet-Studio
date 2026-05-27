@@ -35,7 +35,12 @@ def build_training_ui(engine: StudioEngine):
                     is_vision = gr.Checkbox(label="Is Vision-Language Model (VLM)?", value=False)
                     is_bitnet = gr.Checkbox(label="🔥 Enable 1.58-bit Compression (BitNet)", value=False)
                 
+                gr.Markdown("#### 🌟 Enterprise Features")
+                with gr.Row():
+                    is_distributed = gr.Checkbox(label="🚀 Enable Distributed Training (DeepSpeed ZeRO-3)", value=False, elem_classes=["enterprise-feature"])
+
                 gr.Markdown("#### 3. Basic Hyperparameters")
+                suggest_hp_btn = gr.Button("✨ Auto-Suggest Hyperparameters")
                 with gr.Row():
                     epochs = gr.Number(value=3, label="Epochs", minimum=1)
                     batch_size = gr.Number(value=2, label="Batch Size", minimum=1)
@@ -69,9 +74,19 @@ def build_training_ui(engine: StudioEngine):
                 refresh_btn = gr.Button("🔄 Refresh Logs")
 
         # Callbacks
-        def start_train(m, mode, d, is_vlm, is_bitnet_val, e, b, lr, r, a, w, max_len, out):
+        def do_suggest_hp(path):
+            e, b, lr = engine.suggest_hyperparameters(path)
+            return e, b, lr, engine.get_logs()
+            
+        suggest_hp_btn.click(
+            fn=do_suggest_hp,
+            inputs=[dataset_path],
+            outputs=[epochs, batch_size, learning_rate, log_output]
+        )
+
+        def start_train(m, mode, d, is_vlm, is_bitnet_val, is_dist, e, b, lr, r, a, w, max_len, out):
             is_cpt = "CPT" in mode
-            msg = engine.start_training(m, d, int(e), int(b), lr, int(r), int(a), int(w), int(max_len), out, is_vision=is_vlm, is_bitnet=is_bitnet_val, is_cpt=is_cpt)
+            msg = engine.start_training(m, d, int(e), int(b), lr, int(r), int(a), int(w), int(max_len), out, is_vision=is_vlm, is_bitnet=is_bitnet_val, is_cpt=is_cpt, is_distributed=is_dist)
             return msg + "\n\n" + engine.get_logs()
             
         def update_logs():
@@ -79,7 +94,7 @@ def build_training_ui(engine: StudioEngine):
 
         train_btn.click(
             fn=start_train,
-            inputs=[model_name, training_mode, dataset_path, is_vision, is_bitnet, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir],
+            inputs=[model_name, training_mode, dataset_path, is_vision, is_bitnet, is_distributed, epochs, batch_size, learning_rate, lora_rank, lora_alpha, warmup_steps, max_seq_length, output_dir],
             outputs=[log_output]
         )
         

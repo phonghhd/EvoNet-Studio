@@ -8,7 +8,7 @@ Môi trường ảo (virtual environment) là bắt buộc để tránh xung đ�
 
 ```bash
 # 1. Clone mã nguồn
-git clone https://github.com/your-username/EvoNet-Studio.git
+git clone https://github.com/phonghhd/EvoNet-Studio.git
 cd EvoNet-Studio
 
 # 2. Tạo và kích hoạt môi trường ảo
@@ -42,7 +42,7 @@ Tính năng này giúp bạn loại bỏ dữ liệu rác trước khi huấn lu
 Tinh chỉnh LLM theo phong cách hỏi-đáp.
 1. Trong Tab SFT, chọn Mô hình (Base Model), ví dụ: `unsloth/llama-3-8b-bnb-4bit`.
 2. Điền đường dẫn tới file dữ liệu đã làm sạch.
-3. Chỉnh tham số: Epochs, Batch Size, Learning Rate.
+3. Chỉnh tham số: Bạn có thể nhấn **✨ Auto-Suggest Hyperparameters** để hệ thống tự động điền Epochs, Batch Size, Learning Rate dựa vào kích thước file dữ liệu.
 4. Nhấn **🚀 Start SFT Training**. Quá trình huấn luyện sẽ bắt đầu và log sẽ hiện ra theo thời gian thực.
 Mô hình sau khi huấn luyện sẽ nằm trong thư mục `outputs/`.
 
@@ -58,15 +58,40 @@ Xây dựng mô hình Chatbot có khả năng đọc tài liệu nội bộ (PDF
 2. Bấm **Build Vector DB**.
 3. Quay lại Tab Chat Inference để bắt đầu trò chuyện. AI sẽ sử dụng Vector DB vừa xây dựng để cung cấp thông tin chính xác.
 
-### 3.5. 🖥️ System Monitor (Giám sát Tài nguyên)
+### 3.5. 💬 Giao diện Trò chuyện Nâng cao (Explainable Chat)
+Khi chat với mô hình tại Tab Chat Inference, bạn có thể tích chọn **⚡ Show Generation Speed (Tokens/sec)**. Hệ thống sẽ tự động đo lường và hiển thị tốc độ sinh từ của mô hình (tokens/second) ở cuối mỗi câu trả lời, giúp bạn đánh giá hiệu năng cục bộ.
+
+### 3.6. 🗂️ LoRA Manager
+Tính năng quản lý các trọng số LoRA sau khi huấn luyện:
+- Chuyển sang Tab LoRA Manager và nhấn **Scan for Adapters**.
+- Hệ thống sẽ liệt kê tất cả các adapter đang có trong thư mục `outputs/` kèm theo dung lượng (MB).
+
+### 3.7. 📦 Export GGUF & Triển khai Ollama
+Sau khi hợp nhất LoRA vào Base Model, bạn có thể xuất mô hình để chạy trên các thiết bị yếu:
+- Ở Tab Export & Hub, nhập đường dẫn mô hình và chọn định dạng lượng tử (ví dụ: `q4_k_m`).
+- Nhấn **Export to GGUF**.
+- Sau đó, bạn có thể điền tên mô hình và nhấn **Push to Ollama** để hệ thống tự động đưa mô hình vào Ollama (yêu cầu máy tính đã cài đặt phần mềm Ollama). Mở Terminal lên và gõ `ollama run <tên-mô-hình>` để trò chuyện trực tiếp!
+
+### 3.8. 🖥️ System Monitor (Giám sát Tài nguyên)
 Tab này cho phép bạn theo dõi tình trạng tiêu thụ RAM, CPU, và VRAM của GPU theo thời gian thực. Hãy thường xuyên kiểm tra Tab này trong lúc Training để đảm bảo không bị quá tải bộ nhớ (Out of Memory - OOM).
 
 ## 4. Cấu trúc Thư mục
 - `evonet_studio/ui/`: Chứa mã nguồn của từng Tab giao diện (SFT, DPO, RAG,...).
 - `evonet_studio/engine.py`: Xử lý toàn bộ logic liên lạc với HuggingFace, Unsloth và PyTorch.
 - `outputs/`: Nơi lưu trữ các mô hình sau khi huấn luyện xong.
-- `qa_tests/`: Thư mục chứa các kịch bản kiểm thử (Pytest) để đảm bảo chất lượng hệ thống.
+- `qa_tests/`: Thư mục chứa các kịch bản kiểm thử (Pytest/Unittest) để đảm bảo chất lượng hệ thống.
 
-## Hỗ trợ & Đóng góp
+## 5. Lộ trình Phát triển (Product Roadmap - Open Core)
+Để mang đến công cụ AI mã nguồn mở mạnh mẽ nhất cho cộng đồng, chúng tôi đang có kế hoạch phát triển các tính năng sau trong tương lai:
+- **Tối ưu hóa Apple Silicon (MPS):** Hỗ trợ tăng tốc phần cứng tốt hơn cho người dùng MacOS (M1/M2/M3) không có card NVIDIA.
+- **Tích hợp Llama.cpp WebUI:** Kết nối trực tiếp Giao diện quản lý model để chạy local mượt mà hơn.
+- **Thư viện Template Cộng đồng:** Kho giao diện Prompt Template có sẵn (System Prompts, RLHF guidelines) được cộng đồng đóng góp.
+- **Auto-Evaluation Metrics Cấp Cao:** Đưa vào các chỉ số BLEU, ROUGE, BERTScore trực tiếp trên UI để người dùng so sánh chất lượng model.
+
+## 6. Hỗ trợ & Đóng góp
 Nếu bạn gặp vấn đề hoặc muốn bổ sung tính năng mới cho bản Open-Core, xin vui lòng tạo Issue hoặc Pull Request trên trang GitHub của chúng tôi. 
+
 Cảm ơn bạn đã tin dùng EvoNet-Studio!
+
+---
+*© 2026 EvoNet Framework. Phiên bản Open-Source.*

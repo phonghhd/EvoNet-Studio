@@ -8,6 +8,8 @@ def main():
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--loras", type=str, default="", help="JSON string mapping expert name to LoRA path")
+    parser.add_argument("--ab-model", type=str, default="", help="Path to Challenger Model B")
+    parser.add_argument("--ab-split", type=int, default=0, help="Traffic percentage to route to Model B (0-100)")
     args = parser.parse_args()
 
     print(f"Starting API Server on {args.host}:{args.port} using engine '{args.engine}'...")
@@ -82,6 +84,14 @@ def main():
                 data = await request.json()
                 messages = data.get("messages", [])
                 
+                # A/B Testing Canary Routing
+                import random
+                use_model_b = False
+                if args.ab_model and args.ab_split > 0:
+                    if random.randint(1, 100) <= args.ab_split:
+                        use_model_b = True
+                        print(f"Canary Routing: Request routed to Model B ({args.ab_model})")
+                
                 # Simple prompt construction
                 prompt = ""
                 for msg in messages:
@@ -116,6 +126,9 @@ def main():
                 # -------------------
                 
                 generated_text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+                
+                if use_model_b:
+                    generated_text = f"[Canary Model B - {args.ab_model}]\n" + generated_text
 
                 log_id = f"chatcmpl-{uuid.uuid4().hex}"
                 

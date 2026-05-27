@@ -36,7 +36,11 @@ Sau khi thanh toán thành công, bạn sẽ nhận được một file nén (v�
 ## 3. Các Tính năng Độc quyền (Enterprise)
 - **Auto PII Masking:** Khi xử lý dữ liệu trong Tab Data Cleaner, tính năng PII Masking tự động ẩn danh thẻ tín dụng, số điện thoại để tuân thủ luật bảo mật.
 - **Hardware Lock:** File license.key của bạn chỉ hoạt động trên Máy chủ có địa chỉ MAC trùng khớp với lúc bạn đăng ký mua. Việc sao chép file sang máy khác sẽ khiến phần mềm văng lỗi và từ chối khởi động.
-- **Role-Based Access Control (RBAC):** Nhân viên bình thường chỉ có quyền Xem (Viewer) và chat với AI, không được quyền nhấn nút "Start Training" (tốn tài nguyên GPU). Quyền này chỉ dành cho tài khoản có Role là `admin`.
+- **Quản lý API Key & Rate Limiting:** Thiết lập hạn mức truy cập API cho từng người dùng, ngăn chặn tình trạng D-DoS hoặc spam token từ nội bộ.
+- **SSO (Single Sign-On):** Hỗ trợ đăng nhập nhanh qua Google/Microsoft Azure AD OAuth2, loại bỏ việc quản lý hàng trăm tài khoản phân tán.
+- **Huấn luyện Phân tán Đa Máy Chủ (Multi-Node):** Kích hoạt DeepSpeed ZeRO-3 chỉ bằng một click, tự động ghép nối sức mạnh từ nhiều máy chủ GPU vật lý.
+- **Dashboard Chi Phí GPU:** Ước tính và theo dõi chi phí điện toán quy ra USD (ví dụ: \$3/giờ cho A100) trên thời gian thực.
+- **Canary & A/B Testing Deployment:** Cho phép phân chia lưu lượng (Traffic Split) giữa Model cũ và Model mới để kiểm thử A/B không rủi ro.
 
 ## 4. Kiểm thử Tự động (QA Testing)
 Phiên bản Enterprise đi kèm bộ kiểm thử nội bộ cực kỳ khắt khe:
@@ -54,12 +58,14 @@ Phiên bản Doanh nghiệp cho phép triển khai Mô hình AI thành dạng AP
 - **Lỗi Cạn kiệt VRAM (OOM):** Mở tính năng **PagedAttention** trong phần cài đặt khởi chạy Server hoặc sử dụng kỹ thuật lượng tử hóa (Quantization) xuống `4-bit`.
 
 ## 7. Lộ trình Phát triển (Product Roadmap)
-Để không ngừng gia tăng giá trị cho các Khách hàng Doanh nghiệp, EvoNet-Studio đang nghiên cứu và sẽ sớm ra mắt các tính năng cấp cao sau trong các bản cập nhật sắp tới (Q3/Q4):
-
-- **Single Sign-On (SSO) & Azure AD Integration:** Hỗ trợ đăng nhập một chạm thông qua tài khoản nội bộ của doanh nghiệp (Google Workspace, Microsoft Entra ID).
+EvoNet-Studio Enterprise không ngừng nâng cấp để đáp ứng quy mô tập đoàn. Các tính năng sắp ra mắt trong bản cập nhật tới:
 - **Advanced Audit Logs:** Nhật ký truy vết toàn diện, ghi nhận chi tiết mọi hành động của người dùng (Who, What, When, Where) trên hệ thống để phục vụ điều tra và tuân thủ bảo mật.
 - **Resource Quota Management:** Cho phép Admin giới hạn ngân sách GPU (GPU hours) hoặc số lượng Token tối đa cho từng phòng ban hoặc cá nhân.
 - **Model & Data Registry:** Hệ thống quản lý phiên bản chuyên sâu (Versioning), giúp truy xuất chính xác phiên bản Dataset nào đã tạo ra phiên bản Model nào.
+- **Multi-Tenant Architecture:** Kiến trúc Đa khách thuê thực thụ (SaaS-ready), cho phép một bản cài đặt phục vụ độc lập nhiều phòng ban mà không chia sẻ tài nguyên dữ liệu.
+- **Active Directory/LDAP Sync:** Đồng bộ hóa danh bạ người dùng nội bộ tự động để quản trị phân quyền tập trung.
+- **Continuous Pre-Training (CPT) Cluster Scheduling:** Lập lịch huấn luyện tự động, tích hợp với SLURM/Ray để phân bổ hàng Terabyte dữ liệu chạy định kỳ.
+- **Advanced RAG Evaluation Suites:** Bổ sung các công cụ đo lường RAG (RAGAS, TruLens) trực tiếp vào bảng điều khiển để chấm điểm độ trung thực của AI.
 
 ---
 *© 2026 EvoNet Framework. Protected by Cython Engine.*

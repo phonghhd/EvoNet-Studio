@@ -23,6 +23,10 @@ def build_export_ui(engine: StudioEngine):
                 gguf_model_path = gr.Textbox(label="Model Path to Export", value="outputs/merged_model")
                 quantization = gr.Dropdown(choices=["q4_k_m", "q5_k_m", "q8_0", "f16"], value="q4_k_m", label="Quantization Method")
                 export_btn = gr.Button("💾 Export to GGUF")
+                
+                gr.Markdown("#### 4. Push to Ollama (Local)")
+                ollama_model_name = gr.Textbox(label="Ollama Model Name", value="evonet-model")
+                ollama_btn = gr.Button("🦙 Push to Ollama")
             
             with gr.Column(scale=4):
                 gr.Markdown("#### 📈 Export Console")
@@ -48,10 +52,15 @@ def build_export_ui(engine: StudioEngine):
             msg = engine.export_gguf(path, quant)
             return msg + "\n\n" + engine.get_logs()
             
+        def do_ollama(path, name):
+            msg = engine.push_to_ollama(path, name)
+            return msg + "\n\n" + engine.get_logs()
+            
         def update_logs():
             return engine.get_logs()
 
         merge_btn.click(fn=do_merge, inputs=[base_model_path, lora_path, merged_output_dir], outputs=[log_output])
         push_btn.click(fn=do_push, inputs=[merged_output_dir, hf_token, repo_id], outputs=[log_output])
         export_btn.click(fn=do_export, inputs=[gguf_model_path, quantization], outputs=[log_output])
+        ollama_btn.click(fn=do_ollama, inputs=[gguf_model_path, ollama_model_name], outputs=[log_output])
         refresh_btn.click(fn=update_logs, outputs=[log_output])
