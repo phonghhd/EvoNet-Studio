@@ -16,7 +16,7 @@ EvoNet-Studio Pro is a cutting-edge, web-based (Gradio) interface designed to ma
 
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20375290-blue?style=flat-square)](https://doi.org/10.5281/zenodo.20375290)
 
-[Kaggle Notebook](https://www.kaggle.com/code/phonglucian/no-code-evonet-studio-2x-faster-llm-fine-tun)
+[Kaggle Notebook](https://www.kaggle.com/code/phonglucian/no-code-evonet-studio-faster-llm-fine-tuning)
 
 ### 1. ⚖️ Alignment Tuning (RLHF)
 Move beyond basic SFT. EvoNet-Studio supports the holy trinity of AI alignment:
