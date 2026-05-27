@@ -50,3 +50,4 @@ Dockerfile.enterprise
 portal/
 qa_tests/
 .pytest_cache/
+debug_*.txt
