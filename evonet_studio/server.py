@@ -98,6 +98,16 @@ def main():
                     prompt += f"{msg['role'].capitalize()}: {msg['content']}\n"
                 prompt += "Assistant: "
 
+                # EvoNet AI Firewall
+                from vietnamese_ai.security.llm_firewall import TuongLuaAI
+                firewall = TuongLuaAI()
+                is_safe, reason = firewall.kiem_tra_prompt(prompt)
+                if not is_safe:
+                    return JSONResponse(status_code=400, content={
+                        "error": "Blocked by AI Firewall",
+                        "reason": reason
+                    })
+
                 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
                 
                 # --- MoE ROUTING ---

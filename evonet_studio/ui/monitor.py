@@ -7,9 +7,7 @@ def build_monitor_ui(engine: StudioEngine):
         gr.Markdown("### Real-time Hardware Resources")
         
         with gr.Row():
-            cpu_text = gr.Textbox(label="CPU Usage", interactive=False)
-            ram_text = gr.Textbox(label="RAM Usage", interactive=False)
-            cost_text = gr.Textbox(label="💰 Estimated GPU Training Cost (A100)", interactive=False, elem_classes=["enterprise-feature"])
+            monitor_html = gr.HTML(label="Dashboard")
             
         gpu_json = gr.JSON(label="GPU Statistics")
         
@@ -17,9 +15,27 @@ def build_monitor_ui(engine: StudioEngine):
         
         def update_stats():
             stats = engine.get_system_stats()
-            cpu = f"{stats['cpu_percent']}%"
-            ram = f"{stats['ram_used']:.1f} GB / {stats['ram_total']:.1f} GB ({stats['ram_percent']}%)"
             cost = engine.get_gpu_cost_stats()
-            return cpu, ram, cost, stats['gpus']
             
-        refresh_btn.click(fn=update_stats, outputs=[cpu_text, ram_text, cost_text, gpu_json])
+            try:
+                from vietnamese_ai.ui.components import BangThongKe, TinhToanGPU
+                
+                # We render multiple BangThongKe for CPU, RAM, and Cost
+                cpu_comp = BangThongKe("CPU Usage", lambda: {"CPU": f"{stats['cpu_percent']}%"})
+                ram_comp = BangThongKe("RAM Usage", lambda: {"RAM": f"{stats['ram_percent']}%", "Used": f"{stats['ram_used']:.1f} GB"})
+                cost_comp = BangThongKe("Estimated GPU Cost (A100)", lambda: {"Cost": cost})
+                
+                html_content = (
+                    f"<div style='display: flex; gap: 10px; width: 100%;'>"
+                    f"<div style='flex: 1;'>{cpu_comp.render_html()}</div>"
+                    f"<div style='flex: 1;'>{ram_comp.render_html()}</div>"
+                    f"<div style='flex: 1;'>{cost_comp.render_html()}</div>"
+                    f"</div>"
+                    f"<script>{cpu_comp.render_js()} {ram_comp.render_js()} {cost_comp.render_js()}</script>"
+                )
+            except Exception as e:
+                html_content = f"<i>EvoNet AI Dashboard Error: {str(e)}</i>"
+                
+            return html_content, stats['gpus']
+            
+        refresh_btn.click(fn=update_stats, outputs=[monitor_html, gpu_json])

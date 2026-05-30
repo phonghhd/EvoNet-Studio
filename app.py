@@ -1,10 +1,7 @@
 import sys
 import os
 
-# Add local vietnamese-ai if it exists in deps to sys.path so we can import it
-local_deps_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'deps', 'vietnamese-ai')
-if os.path.exists(local_deps_path) and local_deps_path not in sys.path:
-    sys.path.insert(0, local_deps_path)
+# Removed local deps/vietnamese-ai injection to use pip installed v20.0.1 from venv
 
 import gradio as gr
 from evonet_studio.engine import StudioEngine
@@ -25,6 +22,7 @@ from evonet_studio.ui.benchmark import build_benchmark_ui
 from evonet_studio.ui.telemetry import build_telemetry_ui
 from evonet_studio.ui.cloud_sync import build_cloud_sync_ui
 from evonet_studio.ui.lora_manager import build_lora_manager_ui
+from evonet_studio.ui.builder import build_workflow_ui
 
 def create_app():
     # Initialize Engine
@@ -135,6 +133,7 @@ def create_app():
         )
         
         with gr.Tabs(elem_classes=["glass-panel"]):
+            build_workflow_ui()
             build_synthesis_ui(engine)
             build_training_ui(engine)
             build_alignment_ui(engine)
